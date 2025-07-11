@@ -1,4 +1,4 @@
-// src/components/hooks/usePitchAnalyzer.js
+// src/speech/hooks/usePitchAnalyzer.js
 import { useState, useRef } from 'react';
 import { PitchDetector } from 'pitchy';
 import { usePitchContext } from '../../context/PitchContext';
@@ -39,8 +39,6 @@ export function usePitchAnalyzer() {
       const detector = PitchDetector.forFloat32Array(analyser.fftSize);
       startTimeRef.current = audioContext.currentTime;
 
-      const newPitches = [];
-
       const loop = () => {
         analyser.getFloatTimeDomainData(floatBuffer);
         const [pitch, clarity] = detector.findPitch(floatBuffer, audioContext.sampleRate);
@@ -49,6 +47,9 @@ export function usePitchAnalyzer() {
         if (clarity > 0.9) {
           const pitchData = { time, pitch: Math.round(pitch), clarity: clarity.toFixed(2) };
           newPitches.push(pitchData);
+
+          setPitches([...newPitches]);
+
           setCurrentPitch(Math.round(pitch));
           setAllPitches([...newPitches]);
         }

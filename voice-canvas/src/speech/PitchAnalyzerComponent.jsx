@@ -1,4 +1,4 @@
-// src/components/PitchAnalyzerComponent.jsx
+// src/speech/PitchAnalyzerComponent.jsx
 import React from 'react';
 import { usePitchAnalyzer } from './hooks/usePitchAnalyzer';
 
@@ -32,7 +32,7 @@ export default function PitchAnalyzerComponent() {
         className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 mr-2"
         disabled={isAnalyzing}
       >
-        {isAnalyzing ? 'Analyzing...' : 'Analyze Pitch'}
+        {isAnalyzing ? 'Recording...' : 'Record Pitch'}
       </button>
 
       <button
