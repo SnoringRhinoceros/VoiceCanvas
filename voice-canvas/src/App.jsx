@@ -1,29 +1,37 @@
 import { useState } from 'react'
-import './App.css'
-import {Canvas} from "./canvas/Canvas.jsx";
+import { Canvas } from "./canvas/Canvas.jsx";
 import MicRecorder from './speech/MicRecorder.jsx';
 import PitchAnalyzerComponent from './speech/PitchAnalyzerComponent';
-import ReactDOM from 'react-dom/client';
-import App from './App';
-import { PitchProvider } from './context/PitchContext';
-
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <PitchProvider>
-      <App />
-    </PitchProvider>
-  </React.StrictMode>
-);
+import './App.css';
 
 function App() {
+  const [count, setCount] = useState(0);
 
   return (
     <>
-      <Canvas />
+      <div>
+        <a href="https://vite.dev" target="_blank" rel="noreferrer">
+          <img src="/vite.svg" className="logo" alt="Vite logo" />
+        </a>
+        <a href="https://react.dev" target="_blank" rel="noreferrer">
+          <img src="./assets/react.svg" className="logo react" alt="React logo" />
+        </a>
+      </div>
+      <h1>Vite + React</h1>
+      <div className="card">
+        <button onClick={() => setCount((count) => count + 1)}>
+          count is {count}
+        </button>
+        <p>Edit <code>src/App.jsx</code> and save to test HMR</p>
+      </div>
+      <p className="read-the-docs">
+        Click on the Vite and React logos to learn more
+      </p>
       <MicRecorder />
       <PitchAnalyzerComponent />
+      <Canvas />
     </>
   )
 }
 
-export default App
+export default App;
