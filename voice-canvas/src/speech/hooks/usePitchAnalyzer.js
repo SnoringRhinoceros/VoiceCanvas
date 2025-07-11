@@ -1,8 +1,10 @@
 // src/components/hooks/usePitchAnalyzer.js
 import { useState, useRef } from 'react';
 import { PitchDetector } from 'pitchy';
+import { usePitchContext } from '../../context/PitchContext';
 
 export function usePitchAnalyzer() {
+    const { setCurrentPitch, setAllPitches } = usePitchContext();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [pitches, setPitches] = useState([]);
   const [error, setError] = useState(null);
@@ -12,6 +14,8 @@ export function usePitchAnalyzer() {
   const streamRef = useRef(null);
   const frameIdRef = useRef(null);
   const startTimeRef = useRef(null);
+
+  const newPitches = [];
 
   const analyzePitch = async () => {
     setError(null);
@@ -43,8 +47,10 @@ export function usePitchAnalyzer() {
         const time = audioContext.currentTime - startTimeRef.current;
 
         if (clarity > 0.9) {
-          newPitches.push({ time, pitch: Math.round(pitch), clarity: clarity.toFixed(2) });
-          setPitches([...newPitches]);
+          const pitchData = { time, pitch: Math.round(pitch), clarity: clarity.toFixed(2) };
+          newPitches.push(pitchData);
+          setCurrentPitch(Math.round(pitch));
+          setAllPitches([...newPitches]);
         }
 
         frameIdRef.current = requestAnimationFrame(loop);
