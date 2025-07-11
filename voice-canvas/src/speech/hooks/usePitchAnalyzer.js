@@ -1,49 +1,90 @@
-// src/hooks/usePitchAnalyzer.js
-import { useState } from 'react';
+// src/components/hooks/usePitchAnalyzer.js
+import { useState, useRef } from 'react';
 import { PitchDetector } from 'pitchy';
 
 export function usePitchAnalyzer() {
-  const [pitches, setPitches] = useState([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [pitches, setPitches] = useState([]);
   const [error, setError] = useState(null);
 
-  const analyzePitch = async (filePath = '/recordings/test_recording.webm') => {
-    setIsAnalyzing(true);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const streamRef = useRef(null);
+  const frameIdRef = useRef(null);
+  const startTimeRef = useRef(null);
+
+  const analyzePitch = async () => {
     setError(null);
     setPitches([]);
+    setIsAnalyzing(true);
 
     try {
-      const response = await fetch(filePath);
-      const arrayBuffer = await response.arrayBuffer();
-
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       const audioContext = new AudioContext();
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      audioContextRef.current = audioContext;
 
-      const sampleRate = audioBuffer.sampleRate;
-      const channelData = audioBuffer.getChannelData(0); // first channel
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 2048;
+      analyserRef.current = analyser;
 
-      const frameSize = 1024;
-      const hopSize = 512;
+      source.connect(analyser);
 
-      const detector = PitchDetector.forFloat32Array(frameSize);
-      const results = [];
+      const floatBuffer = new Float32Array(analyser.fftSize);
+      const detector = PitchDetector.forFloat32Array(analyser.fftSize);
+      startTimeRef.current = audioContext.currentTime;
 
-      for (let i = 0; i < channelData.length - frameSize; i += hopSize) {
-        const frame = channelData.slice(i, i + frameSize);
-        const [pitch, clarity] = detector.findPitch(frame, sampleRate);
+      const newPitches = [];
+
+      const loop = () => {
+        analyser.getFloatTimeDomainData(floatBuffer);
+        const [pitch, clarity] = detector.findPitch(floatBuffer, audioContext.sampleRate);
+        const time = audioContext.currentTime - startTimeRef.current;
 
         if (clarity > 0.9) {
-          results.push({ time: i / sampleRate, pitch: pitch.toFixed(2), clarity: clarity.toFixed(2) });
+          newPitches.push({ time, pitch: Math.round(pitch), clarity: clarity.toFixed(2) });
+          setPitches([...newPitches]);
         }
-      }
 
-      setPitches(results);
+        frameIdRef.current = requestAnimationFrame(loop);
+      };
+
+      loop();
+
+      // Stop after 10 seconds (or call stop externally if you prefer)
+      setTimeout(() => {
+        stopAnalysis();
+      }, 10000);
+
     } catch (err) {
-      setError(err.message || 'Pitch analysis failed');
+      console.error(err);
+      setError(err.message || 'Failed to access microphone');
+      setIsAnalyzing(false);
+    }
+  };
+
+  const stopAnalysis = () => {
+    if (frameIdRef.current) {
+      cancelAnimationFrame(frameIdRef.current);
+    }
+
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+    }
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
     }
 
     setIsAnalyzing(false);
   };
 
-  return { analyzePitch, pitches, isAnalyzing, error };
+  return {
+    analyzePitch,
+    stopAnalysis,
+    pitches,
+    isAnalyzing,
+    error,
+  };
 }
