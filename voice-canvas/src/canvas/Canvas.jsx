@@ -31,22 +31,6 @@ export function Canvas() {
     }
   }, [pitchObj]);
 
-  const handleMouseMove = ({ clientX, clientY }) => {
-    const rect = canvas.current.getBoundingClientRect();
-    const x = ((clientX - rect.x) / rect.width) * canvasWidth;
-    const y = ((clientY - rect.y) / rect.height) * canvasHeight;
-
-    if (lastPos.current) {
-      drawHueShiftLine(ctx.current, lastPos.current.x, lastPos.current.y, x, y);
-    }
-
-    lastPos.current = { x, y };
-  };
-
-  const handleMouseLeave = () => {
-    lastPos.current = null;
-  };
-
   return (
     <canvas
       ref={canvas}
@@ -73,6 +57,95 @@ function calculateLine(lastPitchObj, currentPitchObj, ctx){
   drawHueShiftLine(ctx, (lastPitchTime % 10)/10 * canvasWidth, canvasHeight - lastPitchFrequency, (currentPitchTime % 10)/10 * canvasWidth, canvasHeight - currentPitchFrequency);
 }
 
+function drawHueShiftLine2(ctx, x0, y0, x1, y1) {
+  const minX = x0; // start of allowed x-range
+  const maxX = x1; // end of allowed x-range
+
+  ctx.save();
+
+  // Clip drawing to only occur between minX and maxX
+  ctx.beginPath();
+  ctx.rect(minX, 0, maxX + 1 - minX, canvasHeight);
+  ctx.clip();
+
+  ctx.globalCompositeOperation = "color";
+  ctx.lineWidth = 10;
+  ctx.strokeStyle = "rgba(255, 0, 0, 1)";
+  ctx.beginPath();
+  ctx.moveTo(x0, y0);
+  ctx.lineTo(x1, y1);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawHueShiftLine1(ctx, x0, y0, x1, y1) {
+  const thickness = 10;
+
+  const minX = Math.floor(Math.min(x0, x1)) - thickness;
+  const maxX = Math.ceil(Math.max(x0, x1)) + thickness;
+  const minY = Math.floor(Math.min(y0, y1)) - thickness;
+  const maxY = Math.ceil(Math.max(y0, y1)) + thickness;
+
+  const width = maxX - minX;
+  const height = maxY - minY;
+
+  if (width <= 0 || height <= 0) return;
+
+  // Clamp to canvas bounds
+  const safeMinX = Math.max(0, minX);
+  const safeMinY = Math.max(0, minY);
+  const safeWidth = Math.min(canvasWidth - safeMinX, width);
+  const safeHeight = Math.min(canvasHeight - safeMinY, height);
+
+  const imageData = ctx.getImageData(safeMinX, safeMinY, safeWidth, safeHeight);
+  const data = imageData.data;
+
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const steps = Math.max(Math.abs(dx), Math.abs(dy));
+  const hueShift = 20;
+
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const x = Math.round(x0 + dx * t);
+    const y = Math.round(y0 + dy * t);
+
+    for (let oy = -thickness; oy <= thickness; oy++) {
+      for (let ox = -thickness; ox <= thickness; ox++) {
+        const px = x + ox;
+        const py = y + oy;
+
+        if ((px <= (5 + x0)) || px >= x1) continue;
+
+        const relX = px - safeMinX;
+        const relY = py - safeMinY;
+
+        if (
+          relX < 0 || relX >= safeWidth ||
+          relY < 0 || relY >= safeHeight
+        ) continue;
+
+        const index = (relY * safeWidth + relX) * 4;
+
+        const r = data[index];
+        const g = data[index + 1];
+        const b = data[index + 2];
+
+        // Always shift hue regardless of current color
+        let [h, s, l] = rgbToHsl(r, g, b);
+        h = (h + hueShift) % 360;
+        const [nr, ng, nb] = hslToRgb(h, s, l);
+        data[index] = nr;
+        data[index + 1] = ng;
+        data[index + 2] = nb;
+      }
+    }
+  }
+
+  ctx.putImageData(imageData, safeMinX, safeMinY);
+}
+
 
 function drawHueShiftLine(ctx, x0, y0, x1, y1) {
   const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
@@ -95,7 +168,10 @@ function drawHueShiftLine(ctx, x0, y0, x1, y1) {
         const px = x + ox;
         const py = y + oy;
 
+        
         if (px < 0 || py < 0 || px >= canvasWidth || py >= canvasHeight) continue;
+
+        if(px < x0 || px >= x1){continue;}
 
         const index = (py * canvasWidth + px) * 4;
         const r = data[index];
