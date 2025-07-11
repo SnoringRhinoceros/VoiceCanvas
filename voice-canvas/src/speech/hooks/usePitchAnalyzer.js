@@ -1,4 +1,4 @@
-// src/components/hooks/usePitchAnalyzer.js
+// src/speech/hooks/usePitchAnalyzer.js
 import { useState, useRef } from 'react';
 import { PitchDetector } from 'pitchy';
 import { usePitchContext } from '../../context/PitchContext';
