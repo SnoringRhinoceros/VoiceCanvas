@@ -1,13 +1,17 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { Provider } from 'react-redux';
+import store from './settings/settingsStore.js';
 import App from './App.jsx';
 import { PitchProvider } from './context/PitchContext';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <PitchProvider>
-      <App />
-    </PitchProvider>
+    <Provider store={store}>
+      <PitchProvider>
+        <App />
+      </PitchProvider>
+    </Provider>
   </React.StrictMode>
 );
