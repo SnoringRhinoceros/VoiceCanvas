@@ -10,8 +10,8 @@ export function Canvas() {
   const ctx = useRef(null);
   const lastPos = useRef(null);
   const lastPitchObj = useRef(null);
+
   const pitchObjArray = usePitchContext().allPitches;
-  console.log(pitchObjArray);
   const pitchObj = pitchObjArray[pitchObjArray.length -1];
   console.log(pitchObj);
 
@@ -49,12 +49,13 @@ function clearCanvas(ctx) {
 function calculateLine(lastPitchObj, currentPitchObj, ctx){
   const {time: lastPitchTime, pitch: lastPitchFrequency} = lastPitchObj ?? {time: 0, pitch: 0};
   const {time: currentPitchTime, pitch: currentPitchFrequency} = currentPitchObj ?? {time: 0, pitch: 0};
+  if(lastPitchFrequency < 27 || currentPitchFrequency < 27){return;}
   const loopTime = 10;
   if((lastPitchTime % loopTime) > (currentPitchTime % loopTime)){
     drawHueShiftLine(ctx, 0, canvasHeight - lastPitchFrequency, (currentPitchTime % 10)/10 * canvasWidth, canvasHeight - currentPitchFrequency);
     return;
   }
-  drawHueShiftLine(ctx, (lastPitchTime % 10)/10 * canvasWidth, canvasHeight - lastPitchFrequency, (currentPitchTime % 10)/10 * canvasWidth, canvasHeight - currentPitchFrequency);
+  drawHueShiftLine1(ctx, (lastPitchTime % 10)/10 * canvasWidth, canvasHeight - lastPitchFrequency, (currentPitchTime % 10)/10 * canvasWidth, canvasHeight - currentPitchFrequency);
 }
 
 function drawHueShiftLine2(ctx, x0, y0, x1, y1) {
@@ -79,7 +80,7 @@ function drawHueShiftLine2(ctx, x0, y0, x1, y1) {
   ctx.restore();
 }
 
-function drawHueShiftLine1(ctx, x0, y0, x1, y1) {
+function drawHueShiftLine(ctx, x0, y0, x1, y1) {
   const thickness = 10;
 
   const minX = Math.floor(Math.min(x0, x1)) - thickness;
@@ -116,7 +117,7 @@ function drawHueShiftLine1(ctx, x0, y0, x1, y1) {
         const px = x + ox;
         const py = y + oy;
 
-        if ((px <= (5 + x0)) || px >= x1) continue;
+        if ((px <= (x0)) || px >= x1) continue;
 
         const relX = px - safeMinX;
         const relY = py - safeMinY;
@@ -147,7 +148,7 @@ function drawHueShiftLine1(ctx, x0, y0, x1, y1) {
 }
 
 
-function drawHueShiftLine(ctx, x0, y0, x1, y1) {
+function drawHueShiftLine1(ctx, x0, y0, x1, y1) {
   const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
   const data = imageData.data;
   const hueShift = 20;
