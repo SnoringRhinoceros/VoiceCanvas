@@ -4,7 +4,7 @@ import { PitchDetector } from 'pitchy';
 import { usePitchContext } from '../../context/PitchContext';
 
 export function usePitchAnalyzer() {
-    const { setCurrentPitch, setAllPitches } = usePitchContext();
+  const { setCurrentPitch, setAllPitches } = usePitchContext();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [pitches, setPitches] = useState([]);
   const [error, setError] = useState(null);
@@ -15,12 +15,26 @@ export function usePitchAnalyzer() {
   const frameIdRef = useRef(null);
   const startTimeRef = useRef(null);
 
+  const recentPitches = []; // for moving average
   const newPitches = [];
+
+  const MAX_RECENT = 5;
+  const MAX_JUMP = 100; // Hz
+
+  const smoothPitch = (pitch) => {
+    recentPitches.push(pitch);
+    if (recentPitches.length > MAX_RECENT) {
+      recentPitches.shift();
+    }
+    const sum = recentPitches.reduce((a, b) => a + b, 0);
+    return sum / recentPitches.length;
+  };
 
   const analyzePitch = async () => {
     setError(null);
     setPitches([]);
     setIsAnalyzing(true);
+    recentPitches.length = 0;
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -39,19 +53,34 @@ export function usePitchAnalyzer() {
       const detector = PitchDetector.forFloat32Array(analyser.fftSize);
       startTimeRef.current = audioContext.currentTime;
 
+      let lastPitch = null;
+
       const loop = () => {
         analyser.getFloatTimeDomainData(floatBuffer);
-        const [pitch, clarity] = detector.findPitch(floatBuffer, audioContext.sampleRate);
+        const [rawPitch, clarity] = detector.findPitch(floatBuffer, audioContext.sampleRate);
         const time = audioContext.currentTime - startTimeRef.current;
 
         if (clarity > 0.9) {
-          const pitchData = { time, pitch: Math.round(pitch), clarity: clarity.toFixed(2) };
-          newPitches.push(pitchData);
+          const roundedPitch = Math.round(rawPitch);
 
-          setPitches([...newPitches]);
+          if (
+            lastPitch === null || 
+            Math.abs(roundedPitch - lastPitch) < MAX_JUMP
+          ) {
+            const smoothed = Math.round(smoothPitch(roundedPitch));
+            const pitchData = {
+              time,
+              pitch: smoothed,
+              clarity: clarity.toFixed(2),
+            };
 
-          setCurrentPitch(Math.round(pitch));
-          setAllPitches([...newPitches]);
+            newPitches.push(pitchData);
+            setPitches([...newPitches]);
+            setCurrentPitch(smoothed);
+            setAllPitches([...newPitches]);
+
+            lastPitch = smoothed;
+          }
         }
 
         frameIdRef.current = requestAnimationFrame(loop);
@@ -59,7 +88,7 @@ export function usePitchAnalyzer() {
 
       loop();
 
-      // Stop after 10 seconds (or call stop externally if you prefer)
+      // Stop after 10 seconds (or expose this as an external call)
       setTimeout(() => {
         stopAnalysis();
       }, 10000);
