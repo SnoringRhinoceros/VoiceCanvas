@@ -79,7 +79,7 @@ function drawHueShiftLine2(ctx, x0, y0, x1, y1) {
   ctx.restore();
 }
 
-function drawHueShiftLine(ctx, x0, y0, x1, y1) {
+function drawHueShiftLine1(ctx, x0, y0, x1, y1) {
   const thickness = 10;
 
   const minX = Math.floor(Math.min(x0, x1)) - thickness;
@@ -116,7 +116,7 @@ function drawHueShiftLine(ctx, x0, y0, x1, y1) {
         const px = x + ox;
         const py = y + oy;
 
-        if (px < x0 || px >= x1) continue;
+        if ((px <= (5 + x0)) || px >= x1) continue;
 
         const relX = px - safeMinX;
         const relY = py - safeMinY;
@@ -147,7 +147,7 @@ function drawHueShiftLine(ctx, x0, y0, x1, y1) {
 }
 
 
-function drawHueShiftLine3(ctx, x0, y0, x1, y1) {
+function drawHueShiftLine(ctx, x0, y0, x1, y1) {
   const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
   const data = imageData.data;
   const hueShift = 20;
