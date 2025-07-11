@@ -1,5 +1,6 @@
 import "./canvas.css";
 import { useRef, useEffect } from "react";
+import {usePitchContext} from "../context/PitchContext.jsx";
 
 const canvasWidth = 800;
 const canvasHeight = 800;
@@ -8,18 +9,27 @@ export function Canvas() {
   const canvas = useRef(null);
   const ctx = useRef(null);
   const lastPos = useRef(null);
+  const lastPitchObj = useRef(null);
+  const pitchObjArray = usePitchContext().allPitches;
+  console.log(pitchObjArray);
+  const pitchObj = pitchObjArray[pitchObjArray.length -1];
+  console.log(pitchObj);
 
   useEffect(() => {
     if (canvas.current) {
       ctx.current = canvas.current.getContext("2d");
-      ctx.current.fillStyle = "rgb(0, 0, 255)"; // Start with blue
-      ctx.current.fillRect(0, 0, canvasWidth, canvasHeight);
+      ctx.current.fillStyle = "rgb(0, 0, 255)";
+      ctx.current.fillRect(0, 0, canvasWidth, canvasHeight); // only once
     }
-    return () => {
-      if (!ctx.current) return;
-      clearCanvas(ctx.current);
-    };
-  }, []);
+  }, []); // Only runs once on mount
+
+
+  useEffect(() => {
+    if (canvas.current) {
+      calculateLine(lastPitchObj.current, pitchObj, ctx.current);
+      lastPitchObj.current = pitchObj;
+    }
+  }, [pitchObj]);
 
   const handleMouseMove = ({ clientX, clientY }) => {
     const rect = canvas.current.getBoundingClientRect();
@@ -43,8 +53,6 @@ export function Canvas() {
       id="canvas"
       height={canvasHeight}
       width={canvasWidth}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
     />
   );
 }
@@ -52,6 +60,19 @@ export function Canvas() {
 function clearCanvas(ctx) {
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 }
+
+
+function calculateLine(lastPitchObj, currentPitchObj, ctx){
+  const {time: lastPitchTime, pitch: lastPitchFrequency} = lastPitchObj ?? {time: 0, pitch: 0};
+  const {time: currentPitchTime, pitch: currentPitchFrequency} = currentPitchObj ?? {time: 0, pitch: 0};
+  const loopTime = 10;
+  if((lastPitchTime % loopTime) > (currentPitchTime % loopTime)){
+    drawHueShiftLine(ctx, 0, canvasHeight - lastPitchFrequency, (currentPitchTime % 10)/10 * canvasWidth, canvasHeight - currentPitchFrequency);
+    return;
+  }
+  drawHueShiftLine(ctx, (lastPitchTime % 10)/10 * canvasWidth, canvasHeight - lastPitchFrequency, (currentPitchTime % 10)/10 * canvasWidth, canvasHeight - currentPitchFrequency);
+}
+
 
 function drawHueShiftLine(ctx, x0, y0, x1, y1) {
   const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
