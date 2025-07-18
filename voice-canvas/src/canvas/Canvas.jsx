@@ -221,7 +221,7 @@ function drawHueShiftLine(ctx, x0, y0, x1, y1, size) {
     for(let i = 0; i < data.length; i+=4){
       let x = i % imageData.width;
       let y = Math.floor(i / imageData.width);
-      if (((dy - size) - slope * (y )) >= x || ((dy - size) - slope * (y - imageData.height)) <= x){continue;}
+      if (((dy - size) - slope * (y)) >= -x || ((dy - size) - slope * (y - imageData.height)) <= -x){continue;}
       const r = data[i];
       const g = data[i + 1];
       const b = data[i + 2];
