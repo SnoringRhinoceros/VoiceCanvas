@@ -22,12 +22,15 @@ function App() {
     }}>
       <div style={{
         position: 'relative',
-        width: '90vw',
-        height: '300px', // This matters!
-        maxWidth: '800px'
+        width: '90vw',           // or "400px", or "min(90vw, 600px)"
+        height: '90vw',          // makes it a square
+        maxWidth: '600px',
+        maxHeight: '600px',      // optional cap
+        aspectRatio: '1',        // enforce square even on resize (optional)
       }}>
         <Canvas canvasRef={canvasRef} />
       </div>
+
 
 
       <DownloadButton canvasRef={canvasRef} />

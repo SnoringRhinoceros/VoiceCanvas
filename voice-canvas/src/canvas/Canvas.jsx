@@ -17,6 +17,9 @@ export function Canvas({ canvasRef }) {
   const pitchObjArray = usePitchContext().allPitches;
   const pitchObj = pitchObjArray[pitchObjArray.length - 1];
 
+  const isCanvasReady = useRef(false);
+
+
   useEffect(() => {
     const canvasEl = canvasRef?.current;
     if (!canvasEl) return;
