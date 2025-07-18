@@ -3,19 +3,18 @@ import { useState, useRef } from 'react';
 import { useCommandBus } from '../../context/CommandContext.jsx';
 import { matchCommand } from '../commands/matchCommand.js';
 
-function parseCommand(text) {
-  const { sendCommand } = useCommandBus();
-  const command = matchCommand(text);
-  if (command) sendCommand(command);
-}
-
-
 export function useWhisperTranscriber() {
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState(null);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
+  const { sendCommand } = useCommandBus();
+
+  const parseCommand = (text) => {
+    const command = matchCommand(text);
+    if (command) sendCommand(command);
+  };
 
   const startRecording = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -40,11 +39,10 @@ export function useWhisperTranscriber() {
         });
 
         const data = await res.json();
-        setTranscript(data.text || '');
+        const text = data.text || '';
 
-        if ((data.text || '').toLowerCase().includes('start')) {
-          console.log('🟢 Detected keyword: START');
-        }
+        setTranscript(text);
+        parseCommand(text);
       } catch (err) {
         setError(err.message);
       }

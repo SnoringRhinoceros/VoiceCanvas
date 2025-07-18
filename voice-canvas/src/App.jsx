@@ -8,6 +8,7 @@ import DownloadButton from "./canvas/DownloadButton.jsx";
 import { useRef } from "react";
 import MicModeToggle from './speech/MicModeToggle.jsx';
 import { useMicMode } from './context/MicModeContext';
+import { CommandLog } from "./speech/CommandLog.jsx";
 
 
 
@@ -43,6 +44,7 @@ function App() {
       <Settings />
       <PitchAnalyzerComponent />
       <VoiceController />
+      <CommandLog />
     </div>
   );
 }
