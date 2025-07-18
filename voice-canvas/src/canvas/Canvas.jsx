@@ -214,28 +214,32 @@ function drawHueShiftLine(ctx, x0, y0, x1, y1, size) {
     const dx = x1 - x0;
     const dy = y1 - y0;
     const steps = Math.max(Math.abs(dx), Math.abs(dy));
-    const hueShift = 20;
+    
 
     const slope = (x1-x0)/(y1-y0);
 
     for(let i = 0; i < data.length; i+=4){
-      let x = i % imageData.width;
-      let y = Math.floor(i / imageData.width);
-      if (((dy - size) - slope * (y)) >= -x || ((dy - size) - slope * (y - imageData.height)) <= -x){continue;}
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-      let [h, s, l] = rgbToHsl(r, g, b);
-      h = (h + hueShift) % 360;
-      const [nr, ng, nb] = hslToRgb(h, s, l);
-      data[i] = nr;
-      data[i + 1] = ng;
-      data[i + 2] = nb;
+      let x = i/4 % imageData.width;
+      let y = Math.floor(i/4 / imageData.width);
+      if (!(((dy - size) - slope * (y)) >= -x || ((dy + size) - slope * (y - imageData.height)) <= -x)){continue;}
+      shiftPixelData(data, i);
     }
     ctx.putImageData(imageData, safeMinX, safeMinY);
 }
 
 
+function shiftPixelData(data, i){
+  const hueShift = 40;
+  const r = data[i];
+  const g = data[i + 1];
+  const b = data[i + 2];
+  let [h, s, l] = rgbToHsl(r, g, b);
+  h = (h + hueShift) % 360;
+  const [nr, ng, nb] = hslToRgb(h, s, l);
+  data[i] = nr;
+  data[i + 1] = ng;
+  data[i + 2] = nb;
+}
 
 // --- Color Helpers ---
 
