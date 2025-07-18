@@ -11,7 +11,6 @@ export function usePitchAnalyzer() {
   const [error, setError] = useState(null);
 
   const clarityVar = useSelector(state=>state.clarity);
-  console.log(clarityVar);
 
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
