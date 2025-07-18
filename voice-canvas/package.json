@@ -10,9 +10,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "audio-recorder-polyfill": "^0.4.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
+    "formidable": "^3.5.4",
+    "openai": "^5.10.1",
     "pitchy": "^4.1.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "undici": "^6.21.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",
