@@ -11,13 +11,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <Provider store={store}>
       <PitchProvider>
-<<<<<<< HEAD
         <MicModeProvider>
           <App />
         </MicModeProvider>
-=======
-        <App />
->>>>>>> main
       </PitchProvider>
     </Provider>
   </React.StrictMode>

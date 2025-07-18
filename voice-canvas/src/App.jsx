@@ -6,7 +6,6 @@ import './App.css';
 import VoiceController from "./speech/VoiceController.jsx";
 import DownloadButton from "./canvas/DownloadButton.jsx";
 import { useRef } from "react";
-<<<<<<< HEAD
 import MicModeToggle from './speech/MicModeToggle.jsx';
 import { useMicMode } from './context/MicModeContext';
 
@@ -16,11 +15,6 @@ function App() {
     const canvasRef = useRef(null);
     const { micMode, setMicMode } = useMicMode();
 
-=======
-
-function App() {
-    const canvasRef = useRef(null);
->>>>>>> main
 
   return (
     <div style={{
@@ -44,11 +38,7 @@ function App() {
       </div>
 
 
-<<<<<<< HEAD
       <MicModeToggle micMode={micMode} setMicMode={setMicMode} />
-=======
-
->>>>>>> main
       <DownloadButton canvasRef={canvasRef} />
       <Settings />
       <PitchAnalyzerComponent />
@@ -58,8 +48,4 @@ function App() {
 }
 
 
-<<<<<<< HEAD
-=======
-
->>>>>>> main
 export default App;

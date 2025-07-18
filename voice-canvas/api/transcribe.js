@@ -1,11 +1,11 @@
 // pages/api/transcribe.js
 import formidable from 'formidable';
-import fs from 'fs';
+import fs from 'fs/promises';
 import { FormData, File } from 'undici';
 
 export const config = {
   api: {
-    bodyParser: false, // Disable Next.js's default body parser
+    bodyParser: false, // Required for formidable
   },
 };
 
@@ -18,14 +18,17 @@ export default async function handler(req, res) {
 
   form.parse(req, async (err, fields, files) => {
     if (err || !files.audio) {
-      console.error('❌ Form error:', err);
       return res.status(400).json({ error: 'Audio file is required' });
     }
 
     try {
       const file = Array.isArray(files.audio) ? files.audio[0] : files.audio;
 
-      const buffer = fs.readFileSync(file.filepath);
+      // Try to use .toBuffer() if supported, else fallback to fs.readFile
+      const buffer = typeof file.toBuffer === 'function'
+        ? await file.toBuffer()
+        : await fs.readFile(file.filepath);
+
       const blob = new File([buffer], file.originalFilename || 'audio.webm', {
         type: file.mimetype || 'audio/webm',
       });
