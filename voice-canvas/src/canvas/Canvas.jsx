@@ -1,85 +1,177 @@
 import "./canvas.css";
 import { useRef, useEffect } from "react";
-import {usePitchContext} from "../context/PitchContext.jsx";
+import { usePitchContext } from "../context/PitchContext.jsx";
+import { useSelector } from "react-redux";
 
-const canvasWidth = 800;
-const canvasHeight = 800;
-
-export function Canvas() {
-  const canvas = useRef(null);
+export function Canvas({ canvasRef }) {
+  const overlayCanvas = useRef(null);
   const ctx = useRef(null);
-  const lastPos = useRef(null);
+
   const lastPitchObj = useRef(null);
+  const prevPitchForDraw = useRef(null);
+  const frameRef = useRef(null);
+  const startTime = useRef(null);
+  const drawingStarted = useRef(false);
+
+  const thresholdVar = useSelector(state => state.threshold);
   const pitchObjArray = usePitchContext().allPitches;
-  console.log(pitchObjArray);
-  const pitchObj = pitchObjArray[pitchObjArray.length -1];
-  console.log(pitchObj);
+  const pitchObj = pitchObjArray[pitchObjArray.length - 1];
 
-  useEffect(() => {
-    if (canvas.current) {
-      ctx.current = canvas.current.getContext("2d");
-      ctx.current.fillStyle = "rgb(0, 0, 255)";
-      ctx.current.fillRect(0, 0, canvasWidth, canvasHeight); // only once
-    }
-  }, []); // Only runs once on mount
+  const isCanvasReady = useRef(false);
 
 
   useEffect(() => {
-    if (canvas.current) {
-      calculateLine(lastPitchObj.current, pitchObj, ctx.current);
-      lastPitchObj.current = pitchObj;
+    const canvasEl = canvasRef?.current;
+    if (!canvasEl) return;
+
+    const displayWidth = canvasEl.clientWidth;
+    const displayHeight = canvasEl.clientHeight;
+    const dpr = window.devicePixelRatio || 1;
+
+    canvasEl.width = displayWidth * dpr;
+    canvasEl.height = displayHeight * dpr;
+
+    const context = canvasEl.getContext("2d");
+    context.setTransform(1, 0, 0, 1, 0, 0); // Reset transform before scaling
+    context.scale(dpr, dpr);
+
+    ctx.current = context;
+    context.fillStyle = "rgb(0, 0, 255)";
+    context.fillRect(0, 0, displayWidth, displayHeight);
+  }, [canvasRef]);
+
+  useEffect(() => {
+    if (!pitchObj) return;
+
+    const overlayCtx = overlayCanvas.current?.getContext("2d");
+    const canvasEl = canvasRef?.current;
+
+    if (!canvasEl || !overlayCtx) return;
+
+    const width = canvasEl.clientWidth;
+    const height = canvasEl.clientHeight;
+
+    if (lastPitchObj.current && pitchObj.time < lastPitchObj.current.time) {
+      drawingStarted.current = false;
+
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+        frameRef.current = null;
+      }
+
+      overlayCtx.clearRect(0, 0, width, height);
+      prevPitchForDraw.current = null;
     }
-  }, [pitchObj]);
+
+    lastPitchObj.current = pitchObj;
+  }, [pitchObj, canvasRef]);
+
+  useEffect(() => {
+    if (!canvasRef?.current || !pitchObj || !ctx.current) return;
+
+    const canvasEl = canvasRef.current;
+    const width = canvasEl.clientWidth;
+    const height = canvasEl.clientHeight;
+
+    calculateLine(prevPitchForDraw.current, pitchObj, ctx.current, thresholdVar, width, height);
+    prevPitchForDraw.current = pitchObj;
+
+    if (!drawingStarted.current) {
+      drawingStarted.current = true;
+      startOverlayAnimation(width, height);
+    }
+  }, [pitchObj, thresholdVar, canvasRef]);
+
+  function startOverlayAnimation(width, height) {
+    const overlayCtx = overlayCanvas.current.getContext("2d");
+    startTime.current = performance.now();
+
+    function draw(now) {
+      const elapsed = now - startTime.current;
+
+      if (elapsed >= 10000) {
+        overlayCtx.clearRect(0, 0, width, height);
+        overlayCtx.beginPath();
+        overlayCtx.strokeStyle = "red";
+        overlayCtx.lineWidth = 2;
+        overlayCtx.moveTo(width, 0);
+        overlayCtx.lineTo(width, height);
+        overlayCtx.stroke();
+        cancelAnimationFrame(frameRef.current);
+        frameRef.current = null;
+        return;
+      }
+
+      const x = (elapsed / 10000) * width;
+      overlayCtx.clearRect(0, 0, width, height);
+      overlayCtx.beginPath();
+      overlayCtx.strokeStyle = "red";
+      overlayCtx.lineWidth = 2;
+      overlayCtx.moveTo(x, 0);
+      overlayCtx.lineTo(x, height);
+      overlayCtx.stroke();
+
+      frameRef.current = requestAnimationFrame(draw);
+    }
+
+    frameRef.current = requestAnimationFrame(draw);
+  }
+
+  useEffect(() => {
+    return () => {
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+        frameRef.current = null;
+      }
+    };
+  }, []);
 
   return (
-    <canvas
-      ref={canvas}
-      id="canvas"
-      height={canvasHeight}
-      width={canvasWidth}
-    />
+    <>
+      <canvas
+        ref={canvasRef}
+        id="canvas"
+        style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}
+      />
+      <canvas
+        ref={overlayCanvas}
+        id="overlayCanvas"
+        style={{
+          width: "100%",
+          height: "100%",
+          pointerEvents: "none",
+          position: "absolute",
+          top: 0,
+          left: 0,
+          zIndex: 2
+        }}
+      />
+    </>
   );
 }
 
-function clearCanvas(ctx) {
-  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-}
 
 
-function calculateLine(lastPitchObj, currentPitchObj, ctx){
-  const {time: lastPitchTime, pitch: lastPitchFrequency} = lastPitchObj ?? {time: 0, pitch: 0};
-  const {time: currentPitchTime, pitch: currentPitchFrequency} = currentPitchObj ?? {time: 0, pitch: 0};
+function calculateLine(lastPitchObj, currentPitchObj, ctx, threshold, width, height) {
+  const { time: t1, pitch: p1 } = lastPitchObj ?? { time: 0, pitch: 0 };
+  const { time: t2, pitch: p2 } = currentPitchObj ?? { time: 0, pitch: 0 };
+  if (p1 < threshold || p2 < threshold) return;
+
   const loopTime = 10;
-  if((lastPitchTime % loopTime) > (currentPitchTime % loopTime)){
-    drawHueShiftLine(ctx, 0, canvasHeight - lastPitchFrequency, (currentPitchTime % 10)/10 * canvasWidth, canvasHeight - currentPitchFrequency);
-    return;
+  const x1 = (t1 % loopTime) / loopTime * width;
+  const y1 = height - p1;
+  const x2 = (t2 % loopTime) / loopTime * width;
+  const y2 = height - p2;
+
+  if ((t1 % loopTime) > (t2 % loopTime)) {
+    drawHueShiftLine(ctx, 0, height - p1, x2, y2, width, height);
+  } else {
+    drawHueShiftLine1(ctx, x1, y1, x2, y2, width, height);
   }
-  drawHueShiftLine(ctx, (lastPitchTime % 10)/10 * canvasWidth, canvasHeight - lastPitchFrequency, (currentPitchTime % 10)/10 * canvasWidth, canvasHeight - currentPitchFrequency);
 }
 
-function drawHueShiftLine2(ctx, x0, y0, x1, y1) {
-  const minX = x0; // start of allowed x-range
-  const maxX = x1; // end of allowed x-range
 
-  ctx.save();
-
-  // Clip drawing to only occur between minX and maxX
-  ctx.beginPath();
-  ctx.rect(minX, 0, maxX + 1 - minX, canvasHeight);
-  ctx.clip();
-
-  ctx.globalCompositeOperation = "color";
-  ctx.lineWidth = 10;
-  ctx.strokeStyle = "rgba(255, 0, 0, 1)";
-  ctx.beginPath();
-  ctx.moveTo(x0, y0);
-  ctx.lineTo(x1, y1);
-  ctx.stroke();
-
-  ctx.restore();
-}
-
-function drawHueShiftLine1(ctx, x0, y0, x1, y1) {
+function drawHueShiftLine(ctx, x0, y0, x1, y1, canvasWidth, canvasHeight) {
   const thickness = 10;
 
   const minX = Math.floor(Math.min(x0, x1)) - thickness;
@@ -92,7 +184,6 @@ function drawHueShiftLine1(ctx, x0, y0, x1, y1) {
 
   if (width <= 0 || height <= 0) return;
 
-  // Clamp to canvas bounds
   const safeMinX = Math.max(0, minX);
   const safeMinY = Math.max(0, minY);
   const safeWidth = Math.min(canvasWidth - safeMinX, width);
@@ -116,15 +207,12 @@ function drawHueShiftLine1(ctx, x0, y0, x1, y1) {
         const px = x + ox;
         const py = y + oy;
 
-        if ((px <= (5 + x0)) || px >= x1) continue;
+        if ((px <= x0) || px >= x1) continue;
 
         const relX = px - safeMinX;
         const relY = py - safeMinY;
 
-        if (
-          relX < 0 || relX >= safeWidth ||
-          relY < 0 || relY >= safeHeight
-        ) continue;
+        if (relX < 0 || relX >= safeWidth || relY < 0 || relY >= safeHeight) continue;
 
         const index = (relY * safeWidth + relX) * 4;
 
@@ -132,7 +220,6 @@ function drawHueShiftLine1(ctx, x0, y0, x1, y1) {
         const g = data[index + 1];
         const b = data[index + 2];
 
-        // Always shift hue regardless of current color
         let [h, s, l] = rgbToHsl(r, g, b);
         h = (h + hueShift) % 360;
         const [nr, ng, nb] = hslToRgb(h, s, l);
@@ -146,8 +233,7 @@ function drawHueShiftLine1(ctx, x0, y0, x1, y1) {
   ctx.putImageData(imageData, safeMinX, safeMinY);
 }
 
-
-function drawHueShiftLine(ctx, x0, y0, x1, y1) {
+function drawHueShiftLine1(ctx, x0, y0, x1, y1, canvasWidth, canvasHeight) {
   const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
   const data = imageData.data;
   const hueShift = 20;
@@ -162,28 +248,27 @@ function drawHueShiftLine(ctx, x0, y0, x1, y1) {
     const x = Math.round(x0 + dx * t);
     const y = Math.round(y0 + dy * t);
 
-    // Draw a circle at each step for line thickness
+    const minX = Math.min(x0, x1);
+    const maxX = Math.max(x0, x1);
+
     for (let oy = -lineThickness; oy <= lineThickness; oy++) {
       for (let ox = -lineThickness; ox <= lineThickness; ox++) {
         const px = x + ox;
         const py = y + oy;
 
-        
         if (px < 0 || py < 0 || px >= canvasWidth || py >= canvasHeight) continue;
-
-        if(px < x0 || px >= x1){continue;}
+        if (px < minX || px >= maxX) continue;
 
         const index = (py * canvasWidth + px) * 4;
         const r = data[index];
         const g = data[index + 1];
         const b = data[index + 2];
 
-        // If already painted (not pure blue), shift hue
         let [h, s, l] = rgbToHsl(r, g, b);
         h = (h + hueShift) % 360;
         const [nr, ng, nb] = hslToRgb(h, s, l);
 
-        data[index]     = nr;
+        data[index] = nr;
         data[index + 1] = ng;
         data[index + 2] = nb;
       }
@@ -193,7 +278,8 @@ function drawHueShiftLine(ctx, x0, y0, x1, y1) {
   ctx.putImageData(imageData, 0, 0);
 }
 
-// ----- Color helpers -----
+// --- Color Helpers ---
+
 function rgbToHsl(r, g, b) {
   r /= 255; g /= 255; b /= 255;
   const max = Math.max(r, g, b), min = Math.min(r, g, b);
@@ -219,7 +305,7 @@ function hslToRgb(h, s, l) {
   let r, g, b;
 
   if (s === 0) {
-    r = g = b = l; // gray
+    r = g = b = l;
   } else {
     const hue2rgb = (p, q, t) => {
       if (t < 0) t += 1;
