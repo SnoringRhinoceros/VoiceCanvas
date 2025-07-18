@@ -2,7 +2,7 @@
 import { createStore } from 'redux';
 
 // Example reducer to manage the state
-const counterReducer = (state = { threshold: 50, clarity: 50}, action) => {
+const counterReducer = (state = { threshold: 20, clarity: 20}, action) => {
   switch (action.type) {
     case 'setThreshold':
       return { ...state, threshold: action.payload};

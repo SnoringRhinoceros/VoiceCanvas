@@ -34,18 +34,26 @@ export function Canvas() {
     }
   }, [pitchObj, thresholdVar]);
 
-  return (
+  return (<>
     <canvas
       ref={canvas}
       id="canvas"
       height={canvasHeight}
       width={canvasWidth}
     />
-  );
+    <button onClick={()=>{downloadCanvas(canvas.current);}}>Download</button>
+  </>);
 }
 
 function clearCanvas(ctx) {
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+}
+
+function downloadCanvas(canvas){
+  const link = document.createElement('a');
+  link.download = 'filename.png';
+  link.href = canvas.toDataURL()
+  link.click();
 }
 
 
