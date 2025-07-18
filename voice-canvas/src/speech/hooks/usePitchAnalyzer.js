@@ -62,8 +62,7 @@ export function usePitchAnalyzer() {
         analyser.getFloatTimeDomainData(floatBuffer);
         const [rawPitch, clarity] = detector.findPitch(floatBuffer, audioContext.sampleRate);
         const time = audioContext.currentTime - startTimeRef.current;
-
-        if (clarity >= clarityVar) {
+        if (clarity * 100 >= clarityVar) {
           const roundedPitch = Math.round(rawPitch);
 
           if (

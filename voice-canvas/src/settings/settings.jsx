@@ -29,7 +29,7 @@ export function Settings(){
 
       {/* Sidebar */}
       <div className={`sidebar ${isOpen ? 'open' : ''}`}>
-        <a href="javascript:void(0)" className="closebtn" onClick={closeSidebar}>&times;</a>
+        <button className="closebtn" onClick={closeSidebar}>&times;</button>
         <h2>Settings</h2>
         
         <Slider name="Clarity" propName="setClarity"/>

@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 
 export function Slider ({name, propName}){
   // State to hold the slider value
-  const [sliderValue, setSliderValue] = useState(50); // Default to 50
+  const [sliderValue, setSliderValue] = useState(20); // Default to 50
   const dispatch = useDispatch();
 
   // Function to handle value change
