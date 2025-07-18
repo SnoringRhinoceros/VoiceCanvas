@@ -2,12 +2,15 @@
 import { useState, useRef } from 'react';
 import { PitchDetector } from 'pitchy';
 import { usePitchContext } from '../../context/PitchContext';
+import { useSelector } from 'react-redux';
 
 export function usePitchAnalyzer() {
   const { setCurrentPitch, setAllPitches } = usePitchContext();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [pitches, setPitches] = useState([]);
   const [error, setError] = useState(null);
+
+  const clarityVar = useSelector(state=>state.clarity);
 
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
@@ -60,7 +63,7 @@ export function usePitchAnalyzer() {
         const [rawPitch, clarity] = detector.findPitch(floatBuffer, audioContext.sampleRate);
         const time = audioContext.currentTime - startTimeRef.current;
 
-        if (clarity > 0.9) {
+        if (clarity >= clarityVar) {
           const roundedPitch = Math.round(rawPitch);
 
           if (

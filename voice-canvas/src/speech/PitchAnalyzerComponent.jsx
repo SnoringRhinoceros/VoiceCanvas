@@ -45,7 +45,7 @@ export default function PitchAnalyzerComponent() {
 
       {error && <p className="text-red-500 mt-2">Error: {error}</p>}
 
-      {pitches.length > 0 && (
+      {false && pitches.length > 0 && (
         <div className="mt-4 max-h-64 overflow-y-auto">
           <h2 className="font-bold mb-2">Detected Pitches:</h2>
           <ul className="text-sm font-mono">

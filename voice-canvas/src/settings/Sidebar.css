@@ -1,0 +1,84 @@
+/* The Sidebar */
+.sidebar {
+  min-height: 50%;
+  width: 50%; /* Start hidden */
+  position: fixed;
+  z-index: 2; /* Sit on top of the content */
+  left: -50%; /* Position it off-screen to the left initially */
+  top: 25%;
+  background-color: #111;
+  overflow-x: hidden; /* No horizontal scrolling */
+  padding-top: 10px;
+  transition: 1s ease; /* Smooth slide transition */
+  box-sizing: border-box; /* Ensure padding doesn’t affect width */
+}
+
+/* Sidebar links */
+.sidebar a {
+  padding: 8px 8px 8px 32px;
+  text-decoration: none;
+  font-size: 25px;
+  color: #818181;
+  display: block;
+  transition: 0.3s;
+}
+
+.sidebar a:hover {
+  color: #f1f1f1;
+}
+
+/* Close button */
+.closebtn {
+  position: absolute;
+  top: 0;
+  right: 25px;
+  font-size: 36px;
+  margin-left: 50px;
+}
+
+/* Button to open sidebar */
+.openSidebarBtn {
+  position: fixed;
+  top: 5px;
+  right: 5px;
+  font-size: 20px;
+  cursor: pointer;
+  background-color: #111;
+  color: white;
+  padding: 10px;
+  border: none;
+}
+
+.openSidebarBtn:hover {
+  background-color: #444;
+}
+
+/* When sidebar is open */
+.sidebar.open {
+  left: 25%; /* Slide it in */
+}
+
+/* Main content area when sidebar is open */
+body.openSidebar .main-content {
+  margin-left: 250px; /* Push the content when sidebar is open */
+}
+
+/* Background overlay */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  background-color: black; /* Semi-transparent black background */
+  z-index: 1; /* Sit below the sidebar */
+  display: none; /* Initially hidden */
+  transition: opacity 0.5s; /* Smooth transition */
+}
+
+/* Show overlay when sidebar is open */
+.overlay.open {
+  display: block;
+  opacity: 0.4;
+}
