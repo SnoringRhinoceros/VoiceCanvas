@@ -36,7 +36,7 @@ export function Toolbar({ brushColor, setBrushColor, brushSize, setBrushSize }) 
           id="brushSize"
           type="range"
           min="1"
-          max="12"
+          max="40"
           value={brushSize}
           onChange={(e) => setBrushSize(Number(e.target.value))}
         />

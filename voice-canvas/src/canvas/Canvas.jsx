@@ -28,6 +28,7 @@ export function Canvas({ canvasRef }) {
   const thresholdVar = useSelector(state => state.threshold);
   const pitchObjArray = usePitchContext().allPitches;
   const pitchObj = pitchObjArray[pitchObjArray.length - 1];
+  console.log(pitchObj);
 
   // Detect new stream by comparing current pitch time with lastPitchObj time
   useEffect(() => {
@@ -158,14 +159,14 @@ function calculateLine(lastPitchObj, currentPitchObj, ctx, threshold, color, bru
 
   const loopTime = 10;
   const x1 = (t1 % loopTime) / loopTime * canvasWidth;
-  const y1 = canvasHeight - p1;
+  let y1 = canvasHeight - p1;
   const x2 = (t2 % loopTime) / loopTime * canvasWidth;
   const y2 = canvasHeight - p2;
   if(color === "rainbow"){
     if ((t1 % loopTime) > (t2 % loopTime)) {
       drawHueShiftLine(ctx, 0, canvasHeight - p1, x2, y2, brushSize);
     } else {
-      drawHueShiftLine1(ctx, x1, y1, x2, y2, brushSize);
+      drawHueShiftLine(ctx, x1, y1, x2, y2, brushSize);
     }
   }else{
     if((t1 % loopTime) > (t2 % loopTime)){
@@ -176,13 +177,11 @@ function calculateLine(lastPitchObj, currentPitchObj, ctx, threshold, color, bru
   }
 }
 
-function drawNormalLine(ctx, x0, y0, x1, y1, color, size){
+function drawNormalLine(ctx, x0, y0, x1, y1, color, size) {
   ctx.save();
-  console.log(color);
-  ctx.rect(x0, y0, x1-x0, canvasHeight);
-  ctx.clip();
   ctx.strokeStyle = color;
   ctx.lineWidth = size;
+  ctx.lineCap = "round"; // smooth edges
   ctx.beginPath();
   ctx.moveTo(x0, y0);
   ctx.lineTo(x1, y1);
@@ -192,111 +191,51 @@ function drawNormalLine(ctx, x0, y0, x1, y1, color, size){
 
 
 function drawHueShiftLine(ctx, x0, y0, x1, y1, size) {
-  const thickness = size;
+    const thickness = size;
 
-  const minX = Math.floor(Math.min(x0, x1)) - thickness;
-  const maxX = Math.ceil(Math.max(x0, x1)) + thickness;
-  const minY = Math.floor(Math.min(y0, y1)) - thickness;
-  const maxY = Math.ceil(Math.max(y0, y1)) + thickness;
+    const minX = Math.floor(Math.min(x0, x1)) - 3;
+    const maxX = Math.ceil(Math.max(x0, x1)) + 3;
+    const minY = Math.floor(Math.min(y0, y1)) - thickness;
+    const maxY = Math.ceil(Math.max(y0, y1)) + thickness;
 
-  const width = maxX - minX;
-  const height = maxY - minY;
+    const width = maxX - minX;
+    const height = maxY - minY;
 
-  if (width <= 0 || height <= 0) return;
+    if (width <= 0 || height <= 0) return;
 
-  const safeMinX = Math.max(0, minX);
-  const safeMinY = Math.max(0, minY);
-  const safeWidth = Math.min(canvasWidth - safeMinX, width);
-  const safeHeight = Math.min(canvasHeight - safeMinY, height);
+    const safeMinX = Math.max(0, minX);
+    const safeMinY = Math.max(0, minY);
+    const safeWidth = Math.min(canvasWidth - safeMinX, width);
+    const safeHeight = Math.min(canvasHeight - safeMinY, height);
 
-  const imageData = ctx.getImageData(safeMinX, safeMinY, safeWidth, safeHeight);
-  const data = imageData.data;
+    const imageData = ctx.getImageData(safeMinX, safeMinY, safeWidth, safeHeight);
+    const data = imageData.data;
 
-  const dx = x1 - x0;
-  const dy = y1 - y0;
-  const steps = Math.max(Math.abs(dx), Math.abs(dy));
-  const hueShift = 20;
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const steps = Math.max(Math.abs(dx), Math.abs(dy));
+    const hueShift = 20;
 
-  for (let i = 0; i <= steps; i++) {
-    const t = i / steps;
-    const x = Math.round(x0 + dx * t);
-    const y = Math.round(y0 + dy * t);
+    const slope = (x1-x0)/(y1-y0);
 
-    for (let oy = -thickness; oy <= thickness; oy++) {
-      for (let ox = -thickness; ox <= thickness; ox++) {
-        const px = x + ox;
-        const py = y + oy;
-
-        if ((px <= x0) || px >= x1) continue;
-
-        const relX = px - safeMinX;
-        const relY = py - safeMinY;
-
-        if (relX < 0 || relX >= safeWidth || relY < 0 || relY >= safeHeight) continue;
-
-        const index = (relY * safeWidth + relX) * 4;
-
-        const r = data[index];
-        const g = data[index + 1];
-        const b = data[index + 2];
-
-        let [h, s, l] = rgbToHsl(r, g, b);
-        h = (h + hueShift) % 360;
-        const [nr, ng, nb] = hslToRgb(h, s, l);
-        data[index] = nr;
-        data[index + 1] = ng;
-        data[index + 2] = nb;
-      }
+    for(let i = 0; i < data.length; i+=4){
+      let x = i % imageData.width;
+      let y = Math.floor(i / imageData.width);
+      if (((dy - size) - slope * (y )) >= x || ((dy - size) - slope * (y - imageData.height)) <= x){continue;}
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      let [h, s, l] = rgbToHsl(r, g, b);
+      h = (h + hueShift) % 360;
+      const [nr, ng, nb] = hslToRgb(h, s, l);
+      data[i] = nr;
+      data[i + 1] = ng;
+      data[i + 2] = nb;
     }
-  }
-
-  ctx.putImageData(imageData, safeMinX, safeMinY);
+    ctx.putImageData(imageData, safeMinX, safeMinY);
 }
 
-function drawHueShiftLine1(ctx, x0, y0, x1, y1) {
-  const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
-  const data = imageData.data;
-  const hueShift = 20;
-  const lineThickness = 3;
 
-  const dx = x1 - x0;
-  const dy = y1 - y0;
-  const distance = Math.max(Math.abs(dx), Math.abs(dy));
-
-  for (let i = 0; i <= distance; i++) {
-    const t = i / distance;
-    const x = Math.round(x0 + dx * t);
-    const y = Math.round(y0 + dy * t);
-
-    const minX = Math.min(x0, x1);
-    const maxX = Math.max(x0, x1);
-
-    for (let oy = -lineThickness; oy <= lineThickness; oy++) {
-      for (let ox = -lineThickness; ox <= lineThickness; ox++) {
-        const px = x + ox;
-        const py = y + oy;
-
-        if (px < 0 || py < 0 || px >= canvasWidth || py >= canvasHeight) continue;
-        if (px < minX || px >= maxX) continue;
-
-        const index = (py * canvasWidth + px) * 4;
-        const r = data[index];
-        const g = data[index + 1];
-        const b = data[index + 2];
-
-        let [h, s, l] = rgbToHsl(r, g, b);
-        h = (h + hueShift) % 360;
-        const [nr, ng, nb] = hslToRgb(h, s, l);
-
-        data[index] = nr;
-        data[index + 1] = ng;
-        data[index + 2] = nb;
-      }
-    }
-  }
-
-  ctx.putImageData(imageData, 0, 0);
-}
 
 // --- Color Helpers ---
 
