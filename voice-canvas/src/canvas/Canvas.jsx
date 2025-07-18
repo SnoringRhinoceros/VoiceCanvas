@@ -3,19 +3,12 @@ import { useRef, useEffect } from "react";
 import { usePitchContext } from "../context/PitchContext.jsx";
 import { useSelector } from "react-redux";
 
-const canvasWidth = 800;
-const canvasHeight = 800;
+export function Canvas({ canvasRef }) {
+  const overlayCanvas = useRef(null);
+  const ctx = useRef(null);
 
-export function Canvas() {
-  const canvas = useRef(null);         // Base canvas ref
-  const overlayCanvas = useRef(null);  // Overlay canvas ref
-  const ctx = useRef(null);            // Base canvas context
-
-  // For stream detection
   const lastPitchObj = useRef(null);
-  // For drawing lines (previous pitch)
   const prevPitchForDraw = useRef(null);
-
   const frameRef = useRef(null);
   const startTime = useRef(null);
   const drawingStarted = useRef(false);
@@ -24,54 +17,69 @@ export function Canvas() {
   const pitchObjArray = usePitchContext().allPitches;
   const pitchObj = pitchObjArray[pitchObjArray.length - 1];
 
-  // Initialize base canvas background once
   useEffect(() => {
-    if (canvas.current) {
-      ctx.current = canvas.current.getContext("2d");
-      ctx.current.fillStyle = "rgb(0, 0, 255)";
-      ctx.current.fillRect(0, 0, canvasWidth, canvasHeight);
-    }
-  }, []);
+    const canvasEl = canvasRef?.current;
+    if (!canvasEl) return;
 
-  // Detect new stream by comparing current pitch time with lastPitchObj time
+    const displayWidth = canvasEl.clientWidth;
+    const displayHeight = canvasEl.clientHeight;
+    const dpr = window.devicePixelRatio || 1;
+
+    canvasEl.width = displayWidth * dpr;
+    canvasEl.height = displayHeight * dpr;
+
+    const context = canvasEl.getContext("2d");
+    context.setTransform(1, 0, 0, 1, 0, 0); // Reset transform before scaling
+    context.scale(dpr, dpr);
+
+    ctx.current = context;
+    context.fillStyle = "rgb(0, 0, 255)";
+    context.fillRect(0, 0, displayWidth, displayHeight);
+  }, [canvasRef]);
+
   useEffect(() => {
     if (!pitchObj) return;
 
+    const overlayCtx = overlayCanvas.current?.getContext("2d");
+    const canvasEl = canvasRef?.current;
+
+    if (!canvasEl || !overlayCtx) return;
+
+    const width = canvasEl.clientWidth;
+    const height = canvasEl.clientHeight;
+
     if (lastPitchObj.current && pitchObj.time < lastPitchObj.current.time) {
-      // New stream detected - reset animation and clear overlay
       drawingStarted.current = false;
+
       if (frameRef.current) {
         cancelAnimationFrame(frameRef.current);
         frameRef.current = null;
       }
-      if (overlayCanvas.current) {
-        const overlayCtx = overlayCanvas.current.getContext("2d");
-        overlayCtx.clearRect(0, 0, canvasWidth, canvasHeight);
-      }
-      // Reset previous pitch used for drawing to avoid gaps
+
+      overlayCtx.clearRect(0, 0, width, height);
       prevPitchForDraw.current = null;
     }
 
-    // Update lastPitchObj here AFTER new stream check
     lastPitchObj.current = pitchObj;
-  }, [pitchObj]);
+  }, [pitchObj, canvasRef]);
 
-  // Draw pitch line and start overlay animation once per stream
   useEffect(() => {
-    if (!canvas.current || !pitchObj) return;
+    if (!canvasRef?.current || !pitchObj || !ctx.current) return;
 
-    calculateLine(prevPitchForDraw.current, pitchObj, ctx.current, thresholdVar);
+    const canvasEl = canvasRef.current;
+    const width = canvasEl.clientWidth;
+    const height = canvasEl.clientHeight;
 
-    prevPitchForDraw.current = pitchObj; // update previous pitch *after* drawing
+    calculateLine(prevPitchForDraw.current, pitchObj, ctx.current, thresholdVar, width, height);
+    prevPitchForDraw.current = pitchObj;
 
     if (!drawingStarted.current) {
       drawingStarted.current = true;
-      startOverlayAnimation();
+      startOverlayAnimation(width, height);
     }
-  }, [pitchObj, thresholdVar]);
+  }, [pitchObj, thresholdVar, canvasRef]);
 
-  // Overlay animation for the red vertical timeline
-  function startOverlayAnimation() {
+  function startOverlayAnimation(width, height) {
     const overlayCtx = overlayCanvas.current.getContext("2d");
     startTime.current = performance.now();
 
@@ -79,27 +87,25 @@ export function Canvas() {
       const elapsed = now - startTime.current;
 
       if (elapsed >= 10000) {
-        overlayCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+        overlayCtx.clearRect(0, 0, width, height);
         overlayCtx.beginPath();
         overlayCtx.strokeStyle = "red";
         overlayCtx.lineWidth = 2;
-        overlayCtx.moveTo(canvasWidth, 0);
-        overlayCtx.lineTo(canvasWidth, canvasHeight);
+        overlayCtx.moveTo(width, 0);
+        overlayCtx.lineTo(width, height);
         overlayCtx.stroke();
-
         cancelAnimationFrame(frameRef.current);
         frameRef.current = null;
         return;
       }
 
-      const x = (elapsed / 10000) * canvasWidth;
-
-      overlayCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+      const x = (elapsed / 10000) * width;
+      overlayCtx.clearRect(0, 0, width, height);
       overlayCtx.beginPath();
       overlayCtx.strokeStyle = "red";
       overlayCtx.lineWidth = 2;
       overlayCtx.moveTo(x, 0);
-      overlayCtx.lineTo(x, canvasHeight);
+      overlayCtx.lineTo(x, height);
       overlayCtx.stroke();
 
       frameRef.current = requestAnimationFrame(draw);
@@ -108,7 +114,6 @@ export function Canvas() {
     frameRef.current = requestAnimationFrame(draw);
   }
 
-  // Cleanup animation frame on unmount
   useEffect(() => {
     return () => {
       if (frameRef.current) {
@@ -118,59 +123,52 @@ export function Canvas() {
     };
   }, []);
 
-
-  return (<>
-    <div style={{ position: "relative", width: "90vw", height: canvasHeight }}>
+  return (
+    <>
       <canvas
-        ref={canvas}
+        ref={canvasRef}
         id="canvas"
-        height={canvasHeight}
-        width={canvasWidth}
-        style={{ position: "absolute", top: 0, left: 0, zIndex: 1 }}
+        style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}
       />
       <canvas
-        id="overlayCanvas"
         ref={overlayCanvas}
-        height={canvasHeight}
-        width={canvasWidth}
-        style={{ position: "absolute", top: 0, left: 0, zIndex: 2, pointerEvents: "none" }}
-      />
-      
-    </div>
-    <button
-        onClick={() => {
-          downloadCanvas(canvas.current);
+        id="overlayCanvas"
+        style={{
+          width: "100%",
+          height: "100%",
+          pointerEvents: "none",
+          position: "absolute",
+          top: 0,
+          left: 0,
+          zIndex: 2
         }}
-        style={{ position: "relative"}}
-      >
-        Download
-      </button>
-  </>);
+      />
+    </>
+  );
 }
 
-// --- Utility Functions ---
 
-function downloadCanvas(canvas) {
-  const link = document.createElement("a");
-  link.download = "filename.png";
-  link.href = canvas.toDataURL();
-  link.click();
-}
 
-function calculateLine(lastPitchObj, currentPitchObj, ctx, threshold) {
-  const { time: lastPitchTime, pitch: lastPitchFrequency } = lastPitchObj ?? { time: 0, pitch: 0 };
-  const { time: currentPitchTime, pitch: currentPitchFrequency } = currentPitchObj ?? { time: 0, pitch: 0 };
-  if (lastPitchFrequency < threshold || currentPitchFrequency < threshold) return;
+function calculateLine(lastPitchObj, currentPitchObj, ctx, threshold, width, height) {
+  const { time: t1, pitch: p1 } = lastPitchObj ?? { time: 0, pitch: 0 };
+  const { time: t2, pitch: p2 } = currentPitchObj ?? { time: 0, pitch: 0 };
+  if (p1 < threshold || p2 < threshold) return;
 
   const loopTime = 10;
-  if ((lastPitchTime % loopTime) > (currentPitchTime % loopTime)) {
-    drawHueShiftLine(ctx, 0, canvasHeight - lastPitchFrequency, (currentPitchTime % 10) / 10 * canvasWidth, canvasHeight - currentPitchFrequency);
-    return;
+  const x1 = (t1 % loopTime) / loopTime * width;
+  const y1 = height - p1;
+  const x2 = (t2 % loopTime) / loopTime * width;
+  const y2 = height - p2;
+
+  if ((t1 % loopTime) > (t2 % loopTime)) {
+    drawHueShiftLine(ctx, 0, height - p1, x2, y2, width, height);
+  } else {
+    drawHueShiftLine1(ctx, x1, y1, x2, y2, width, height);
   }
-  drawHueShiftLine1(ctx, (lastPitchTime % 10) / 10 * canvasWidth, canvasHeight - lastPitchFrequency, (currentPitchTime % 10) / 10 * canvasWidth, canvasHeight - currentPitchFrequency);
 }
 
-function drawHueShiftLine(ctx, x0, y0, x1, y1) {
+
+function drawHueShiftLine(ctx, x0, y0, x1, y1, canvasWidth, canvasHeight) {
   const thickness = 10;
 
   const minX = Math.floor(Math.min(x0, x1)) - thickness;
@@ -232,7 +230,7 @@ function drawHueShiftLine(ctx, x0, y0, x1, y1) {
   ctx.putImageData(imageData, safeMinX, safeMinY);
 }
 
-function drawHueShiftLine1(ctx, x0, y0, x1, y1) {
+function drawHueShiftLine1(ctx, x0, y0, x1, y1, canvasWidth, canvasHeight) {
   const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
   const data = imageData.data;
   const hueShift = 20;
