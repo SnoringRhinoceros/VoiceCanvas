@@ -1,5 +1,14 @@
 // hooks/useWhisperTranscriber.js
 import { useState, useRef } from 'react';
+import { useCommandBus } from '../../context/CommandContext.jsx';
+import { matchCommand } from '../commands/matchCommand.js';
+
+function parseCommand(text) {
+  const { sendCommand } = useCommandBus();
+  const command = matchCommand(text);
+  if (command) sendCommand(command);
+}
+
 
 export function useWhisperTranscriber() {
   const [isRecording, setIsRecording] = useState(false);

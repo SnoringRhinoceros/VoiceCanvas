@@ -6,13 +6,16 @@ import App from './App.jsx';
 import { PitchProvider } from './context/PitchContext';
 import './index.css';
 import { MicModeProvider } from './context/MicModeContext.jsx';
+import { CommandProvider } from './context/CommandContext.jsx';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <Provider store={store}>
       <PitchProvider>
         <MicModeProvider>
-          <App />
+          <CommandProvider>
+            <App />
+          </CommandProvider>
         </MicModeProvider>
       </PitchProvider>
     </Provider>
