@@ -1,5 +1,6 @@
 import "./canvas.css";
-import { useRef, useEffect } from "react";
+import {Toolbar} from "./Toolbar.jsx"; 
+import { useRef, useEffect, useState } from "react";
 import { usePitchContext } from "../context/PitchContext.jsx";
 import { useSelector } from "react-redux";
 
@@ -20,6 +21,9 @@ export function Canvas({ canvasRef }) {
   const frameRef = useRef(null);
   const startTime = useRef(null);
   const drawingStarted = useRef(false);
+
+  const [brushColor, setBrushColor] = useState("rainbow");
+  const [brushSize, setBrushSize] = useState(4);
 
   const thresholdVar = useSelector(state => state.threshold);
   const pitchObjArray = usePitchContext().allPitches;
@@ -52,7 +56,7 @@ export function Canvas({ canvasRef }) {
   useEffect(() => {
     if (!canvas.current || !pitchObj) return;
 
-    calculateLine(prevPitchForDraw.current, pitchObj, ctx.current, thresholdVar);
+    calculateLine(prevPitchForDraw.current, pitchObj, ctx.current, thresholdVar, brushColor, brushSize);
 
     prevPitchForDraw.current = pitchObj; // update previous pitch *after* drawing
 
@@ -119,55 +123,76 @@ export function Canvas({ canvasRef }) {
 
   return (
     <>
-      <canvas
-        ref={canvas}
-        id="canvas"
-        width={canvasWidth}
-        height={canvasHeight}
-        style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}
+      <Toolbar
+        brushColor={brushColor}
+        setBrushColor={setBrushColor}
+        brushSize={brushSize}
+        setBrushSize={setBrushSize}
       />
-      <canvas
-        ref={overlayCanvas}
-        id="overlayCanvas"
-        width={canvasWidth}
-        height={canvasHeight}
-        style={{
-          width: "100%",
-          height: "100%",
-          pointerEvents: "none",
-          position: "absolute",
-          top: 0,
-          left: 0,
-          zIndex: 2
-        }}
-      />
+      <div id="canvases">
+        <canvas
+          ref={canvas}
+          id="canvas"
+          width={canvasWidth}
+          height={canvasHeight}
+        />
+        <canvas
+          ref={overlayCanvas}
+          id="overlayCanvas"
+          width={canvasWidth}
+          height={canvasHeight}
+        />
+      </div>
     </>
   );
 }
 
 
 
-function calculateLine(lastPitchObj, currentPitchObj, ctx, threshold) {
+function calculateLine(lastPitchObj, currentPitchObj, ctx, threshold, color, brushSize) {
   const { time: t1, pitch: p1 } = lastPitchObj ?? { time: 0, pitch: 0 };
   const { time: t2, pitch: p2 } = currentPitchObj ?? { time: 0, pitch: 0 };
   if (p1 < threshold || p2 < threshold) return;
+
+  console.log(brushSize);
 
   const loopTime = 10;
   const x1 = (t1 % loopTime) / loopTime * canvasWidth;
   const y1 = canvasHeight - p1;
   const x2 = (t2 % loopTime) / loopTime * canvasWidth;
   const y2 = canvasHeight - p2;
-
-  if ((t1 % loopTime) > (t2 % loopTime)) {
-    drawHueShiftLine(ctx, 0, canvasHeight - p1, x2, y2);
-  } else {
-    drawHueShiftLine1(ctx, x1, y1, x2, y2);
+  if(color === "rainbow"){
+    if ((t1 % loopTime) > (t2 % loopTime)) {
+      drawHueShiftLine(ctx, 0, canvasHeight - p1, x2, y2, brushSize);
+    } else {
+      drawHueShiftLine1(ctx, x1, y1, x2, y2, brushSize);
+    }
+  }else{
+    if((t1 % loopTime) > (t2 % loopTime)){
+      drawNormalLine(ctx, 0, canvasHeight - p1, x2, y2, color, brushSize);
+    }else{
+      drawNormalLine(ctx, x1, y1, x2, y2, color, brushSize);
+    }
   }
 }
 
+function drawNormalLine(ctx, x0, y0, x1, y1, color, size){
+  ctx.save();
+  console.log(color);
+  ctx.rect(x0, y0, x1-x0, canvasHeight);
+  ctx.clip();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = size;
+  ctx.beginPath();
+  ctx.moveTo(x0, y0);
+  ctx.lineTo(x1, y1);
+  ctx.stroke();
+  ctx.restore();
+}
 
-function drawHueShiftLine(ctx, x0, y0, x1, y1) {
-  const thickness = 10;
+
+function drawHueShiftLine(ctx, x0, y0, x1, y1, size) {
+  const thickness = size;
 
   const minX = Math.floor(Math.min(x0, x1)) - thickness;
   const maxX = Math.ceil(Math.max(x0, x1)) + thickness;
