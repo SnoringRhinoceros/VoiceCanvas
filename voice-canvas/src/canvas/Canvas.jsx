@@ -4,6 +4,7 @@ import { useRef, useEffect, useState, useContext } from "react";
 import { usePitchContext } from "../context/PitchContext.jsx";
 import { useSelector } from "react-redux";
 import {TimeContext} from "../App.jsx";
+import {useMicMode} from "../context/MicModeContext.jsx";
 
 const canvasWidth = 800;
 const canvasHeight = 800;
@@ -15,6 +16,10 @@ export function Canvas({ canvasRef }) {
   const ctx = useRef(null);            // Base canvas context
 
   const time = useContext(TimeContext);
+
+  const mode = useMicMode().micMode;
+  const modeRef = useRef(mode);
+  console.log(mode);
 
   // For stream detection
   const lastPitchObj = useRef(null);
@@ -70,6 +75,10 @@ export function Canvas({ canvasRef }) {
     }
   }, [pitchObj, thresholdVar]);
 
+  useEffect(()=>{
+    modeRef.current = mode;
+  }, [mode]);
+
   // Overlay animation for the red vertical timeline
   function startOverlayAnimation() {
     const overlayCtx = overlayCanvas.current.getContext("2d");
@@ -77,8 +86,17 @@ export function Canvas({ canvasRef }) {
 
     function draw(now) {
       const elapsed = now - startTime.current;
+      if(modeRef.current !== "drawing"){
+        console.log("ran");
+        cancelAnimationFrame(frameRef.current);
+        overlayCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+        startTime.current = now;
+        frameRef.current = null;
+        return;
+      }
 
       if (elapsed >= time * 1000) {
+        console.log("here");
         overlayCtx.clearRect(0, 0, canvasWidth, canvasHeight);
         overlayCtx.beginPath();
         overlayCtx.strokeStyle = "red";
@@ -87,8 +105,10 @@ export function Canvas({ canvasRef }) {
         overlayCtx.lineTo(canvasWidth, canvasHeight);
         overlayCtx.stroke();
 
-        cancelAnimationFrame(frameRef.current);
+        //cancelAnimationFrame(frameRef.current);
+        startTime.current = now;
         frameRef.current = null;
+        frameRef.current = requestAnimationFrame(draw);
         return;
       }
 

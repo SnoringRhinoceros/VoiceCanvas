@@ -1,14 +1,23 @@
 // src/speech/hooks/usePitchAnalyzer.js
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { PitchDetector } from 'pitchy';
 import { usePitchContext } from '../../context/PitchContext';
 import { useSelector } from 'react-redux';
+import {useMicMode} from "../../context/MicModeContext.jsx";
 
 export function usePitchAnalyzer() {
   const { setCurrentPitch, setAllPitches } = usePitchContext();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [pitches, setPitches] = useState([]);
   const [error, setError] = useState(null);
+
+  const mode = useMicMode().micMode;
+ 
+  const modeRef = useRef(mode);
+  
+  useEffect(()=>{
+    modeRef.current = mode;
+  }, [mode]);
 
   const clarityVar = useSelector(state=>state.clarity);
 
@@ -85,7 +94,11 @@ export function usePitchAnalyzer() {
           }
         }
 
-        frameIdRef.current = requestAnimationFrame(loop);
+        if (modeRef.current === "drawing") {
+          frameIdRef.current = requestAnimationFrame(loop);
+        }else {
+          stopAnalysis();
+        }
       };
 
       loop();
@@ -94,6 +107,13 @@ export function usePitchAnalyzer() {
       //setTimeout(() => {
       //  stopAnalysis();
       //}, 10000);
+      //if(modeRef.current !== "drawing"){
+        
+       // setTimeout(() => {
+         // stopAnalysis();
+        //}, 0);
+      //}
+      
 
     } catch (err) {
       console.error(err);
