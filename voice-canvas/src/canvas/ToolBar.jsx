@@ -2,32 +2,44 @@ import { useEffect } from 'react';
 import { useCommandBus } from '../context/CommandContext';
 import { VoiceCommands } from '../speech/commands/commandMap';
 
-const commandActions = {
-  [VoiceCommands.color_red]: () => setBrushColor('red'),
-  [VoiceCommands.color_green]: () => setBrushColor('green'),
-  [VoiceCommands.color_blue]: () => setBrushColor('blue'),
-  [VoiceCommands.color_white]: () => setBrushColor('white'),
-  [VoiceCommands.color_rainbow]: () => setBrushColor('rainbow'),
-  [VoiceCommands.increase_brush]: () => setBrushSize(prev => Math.min(prev + 5, 40)),
-  [VoiceCommands.decrease_brush]: () => setBrushSize(prev => Math.max(prev - 5, 1)),
-};
-
-
 export function Toolbar({ brushColor, setBrushColor, brushSize, setBrushSize }) {
   const { subscribe } = useCommandBus();
 
   useEffect(() => {
-    const unsub = subscribe((command) => {
+    const commandActions = {
+      [VoiceCommands.color_red]: () => setBrushColor('red'),
+      [VoiceCommands.color_green]: () => setBrushColor('green'),
+      [VoiceCommands.color_blue]: () => setBrushColor('blue'),
+      [VoiceCommands.color_white]: () => setBrushColor('white'),
+      [VoiceCommands.color_rainbow]: () => setBrushColor('rainbow'),
+      [VoiceCommands.increase_brush]: () =>
+        setBrushSize?.((prev) => Math.min((prev || brushSize) + 5, 40)),
+      [VoiceCommands.decrease_brush]: () =>
+        setBrushSize?.((prev) => Math.max((prev || brushSize) - 5, 1)),
+      [VoiceCommands.set_brush_size]: (size) => {
+        if (size >= 1 && size <= 40) {
+          setBrushSize(size);
+        } else {
+          console.warn('Invalid brush size:', size);
+        }
+      }
+    };
+
+    const unsub = subscribe((msg) => {
+      const { command, value } = typeof msg === 'string' ? { command: msg } : msg;
+
       const action = commandActions[command];
       if (action) {
-        action();
+        action(value);
+      } else {
+        console.warn('⚠️ No action mapped for command:', msg);
       }
     });
 
     return unsub;
-  }, [setBrushColor, setBrushSize]);
+  }, [setBrushColor, setBrushSize, brushSize]);
 
-
+  // UI rendering
   return (
     <div style={{
       display: "flex",
