@@ -1,11 +1,19 @@
 // src/speech/PitchAnalyzerComponent.jsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { usePitchAnalyzer } from './hooks/usePitchAnalyzer';
 import { useMicMode } from '../context/MicModeContext';
 
 export default function PitchAnalyzerComponent() {
   const { micMode } = useMicMode();
-  const { analyzePitch, pitches, isAnalyzing, error } = usePitchAnalyzer();
+  const { analyzePitch, stopAnalyzing, pitches, isAnalyzing, error } = usePitchAnalyzer();
+
+  useEffect(() => {
+    if (micMode === 'drawing') {
+      analyzePitch(); // Automatically start
+    } else {
+      stopAnalyzing(); // Automatically stop
+    }
+  }, [micMode, analyzePitch, stopAnalyzing]);
 
   const downloadResults = () => {
     if (pitches.length === 0) return;
@@ -27,40 +35,33 @@ export default function PitchAnalyzerComponent() {
     URL.revokeObjectURL(url);
   };
 
-  if (micMode !== 'drawing') return null; else if (micMode !== 'command') {
-    return (
-      <div className="p-4">
-        <button
-          onClick={() => analyzePitch()}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 mr-2"
-          disabled={isAnalyzing}
-        >
-          {isAnalyzing ? 'Recording...' : 'Record Pitch'}
-        </button>
+  if (micMode !== 'drawing') return null;
 
-        <button
-          onClick={downloadResults}
-          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-          disabled={pitches.length === 0}
-        >
-          Download CSV
-        </button>
+  return (
+    <div className="p-4">
+      <button
+        onClick={downloadResults}
+        className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+        disabled={pitches.length === 0}
+      >
+        Download CSV
+      </button>
 
-        {error && <p className="text-red-500 mt-2">Error: {error}</p>}
+      {error && <p className="text-red-500 mt-2">Error: {error}</p>}
 
-        {false && pitches.length > 0 && (
-          <div className="mt-4 max-h-64 overflow-y-auto">
-            <h2 className="font-bold mb-2">Detected Pitches:</h2>
-            <ul className="text-sm font-mono">
-              {pitches.map((p, i) => (
-                <li key={i}>
-                  t={p.time.toFixed(2)}s: pitch={p.pitch} Hz (clarity={p.clarity})
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    );
-  }
+      {/* Optional: Pitch list for debugging */}
+      {false && pitches.length > 0 && (
+        <div className="mt-4 max-h-64 overflow-y-auto">
+          <h2 className="font-bold mb-2">Detected Pitches:</h2>
+          <ul className="text-sm font-mono">
+            {pitches.map((p, i) => (
+              <li key={i}>
+                t={p.time.toFixed(2)}s: pitch={p.pitch} Hz (clarity={p.clarity})
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
 }
