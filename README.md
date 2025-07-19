@@ -9,10 +9,9 @@ It was created to empower individuals with limited fine motor control to create 
 - Voice-controlled interface — no mouse or keyboard needed
 - Real-time drawing with voice commands
 - Pitch recognition for additional creative input
-- Fully voice-navigable UI
 - Optional clickable buttons for hybrid control
+- Fully voice-navigable UI (scrapped due to time-constraints)
 
-> A full list of supported voice commands is provided within the app interface.
 
 ## Live Demo
 
@@ -29,11 +28,11 @@ Try it now: [https://speech-canvas.vercel.app](https://speech-canvas.vercel.app)
 | `decrease brush` | Makes the brush size smaller       |
 | `set brush size X` | Sets brush size to size X (0-40) |
 
-💡 All commands are case-insensitive and can be spoken naturally. Voice Canvas is designed to recognize these words in context.
+> 💡 All commands are case-insensitive and can be spoken naturally. Voice Canvas is designed to recognize these words in context.
 
 Ex:
 `Use color red`
-Switches the color to red. Even though you don't need to say "use color," saying that gives me context which creates more accurate transcriptions.
+Switches the color to red. Even though you don't need to say "use color," saying that gives more context which creates more accurate transcriptions.
 
 ## Tech Stack
 
