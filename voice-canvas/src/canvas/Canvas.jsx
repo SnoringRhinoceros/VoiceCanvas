@@ -1,5 +1,5 @@
 import "./canvas.css";
-import {Toolbar} from "./Toolbar.jsx"; 
+import {ToolBar} from "./Toolbar.jsx"; 
 import { useRef, useEffect, useState, useContext } from "react";
 import { usePitchContext } from "../context/PitchContext.jsx";
 import { useSelector } from "react-redux";

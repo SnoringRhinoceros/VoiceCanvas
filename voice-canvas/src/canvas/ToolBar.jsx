@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useCommandBus } from '../context/CommandContext';
 import { VoiceCommands } from '../speech/commands/commandMap';
 
-export function Toolbar({ brushColor, setBrushColor, brushSize, setBrushSize }) {
+export function ToolBar({ brushColor, setBrushColor, brushSize, setBrushSize }) {
   const { subscribe } = useCommandBus();
 
   useEffect(() => {
