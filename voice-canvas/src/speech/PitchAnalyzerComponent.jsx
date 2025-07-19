@@ -1,19 +1,25 @@
-// src/speech/PitchAnalyzerComponent.jsx
 import React, { useEffect } from 'react';
 import { usePitchAnalyzer } from './hooks/usePitchAnalyzer';
 import { useMicMode } from '../context/MicModeContext';
 
 export default function PitchAnalyzerComponent() {
   const { micMode } = useMicMode();
-  const { analyzePitch, stopAnalyzing, pitches, isAnalyzing, error } = usePitchAnalyzer();
+  const {
+    analyzePitch,
+    stopAnalysis,
+    pitches,
+    isAnalyzing,
+    error,
+  } = usePitchAnalyzer();
 
+  // Effect only runs when micMode changes
   useEffect(() => {
-    if (micMode === 'drawing') {
-      analyzePitch(); // Automatically start
-    } else {
-      stopAnalyzing(); // Automatically stop
+    if (micMode === 'drawing' && !isAnalyzing) {
+      analyzePitch();
+    } else if (micMode !== 'drawing' && isAnalyzing) {
+      stopAnalysis();
     }
-  }, [micMode, analyzePitch, stopAnalyzing]);
+  }, [micMode]); // ONLY micMode should be in deps
 
   const downloadResults = () => {
     if (pitches.length === 0) return;
@@ -48,20 +54,6 @@ export default function PitchAnalyzerComponent() {
       </button>
 
       {error && <p className="text-red-500 mt-2">Error: {error}</p>}
-
-      {/* Optional: Pitch list for debugging */}
-      {false && pitches.length > 0 && (
-        <div className="mt-4 max-h-64 overflow-y-auto">
-          <h2 className="font-bold mb-2">Detected Pitches:</h2>
-          <ul className="text-sm font-mono">
-            {pitches.map((p, i) => (
-              <li key={i}>
-                t={p.time.toFixed(2)}s: pitch={p.pitch} Hz (clarity={p.clarity})
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 }
