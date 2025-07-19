@@ -1,5 +1,5 @@
 import "./canvas.css";
-import {ToolBar} from "./Toolbar.jsx"; 
+import {ToolBar} from "./ToolBar.jsx"; 
 import { useRef, useEffect, useState, useContext } from "react";
 import { usePitchContext } from "../context/PitchContext.jsx";
 import { useSelector } from "react-redux";
@@ -174,7 +174,7 @@ export function Canvas({ canvasRef }) {
 
   return (
     <>
-      <Toolbar
+      <ToolBar
         brushColor={brushColor}
         setBrushColor={setBrushColor}
         brushSize={brushSize}
