@@ -5,12 +5,12 @@ import PitchAnalyzerComponent from './speech/PitchAnalyzerComponent';
 import './App.css';
 import VoiceController from "./speech/VoiceController.jsx";
 import DownloadButton from "./canvas/DownloadButton.jsx";
-import { useRef } from "react";
+import { useRef, createContext } from "react";
 import MicModeToggle from './speech/MicModeToggle.jsx';
 import { useMicMode } from './context/MicModeContext';
 import { CommandLog } from "./speech/CommandLog.jsx";
 
-
+export const TimeContext = createContext();
 
 function App() {
     const canvasRef = useRef(null);
@@ -18,6 +18,7 @@ function App() {
 
 
   return (
+    <TimeContext.Provider value={10}>
     <div style={{
       display: "flex",
       flexDirection: "column",
@@ -46,6 +47,7 @@ function App() {
       <VoiceController />
       <CommandLog />
     </div>
+    </TimeContext.Provider>
   );
 }
 
