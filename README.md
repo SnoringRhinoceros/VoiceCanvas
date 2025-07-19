@@ -18,6 +18,17 @@ It was created to empower individuals with limited fine motor control to create 
 
 Try it now: [https://speech-canvas.vercel.app](https://speech-canvas.vercel.app)
 
+| **Command**      | **What it Does**                   |
+| ---------------- | ---------------------------------- |
+| `red`            | Changes brush color to red         |
+| `blue`           | Changes brush color to blue        |
+| `green`          | Changes brush color to green       |
+| `white`          | Changes brush color to white       |
+| `rainbow`        | Enables a multicolor rainbow brush |
+| `increase brush` | Makes the brush size larger        |
+| `decrease brush` | Makes the brush size smaller       |
+
+
 ## Tech Stack
 
 - **Frontend:** React + Vite
