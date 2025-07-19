@@ -1,14 +1,19 @@
 import { VoiceCommands } from './commandMap';
 
-export function matchCommand(transcript) {
-    const text = transcript.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").replace(/\s{2,}/g, " ");
-    console.log(text)
+const triggerWords = {
+  color_red: 'red',
+  color_blue: 'blue',
+  color_green: 'green',
+    color_white: 'white',
+  color_rainbow: 'rainbow',
+    increase_brush: 'increase brush size',
+  decrease_brush: 'decrease brush size',
+};
 
-  for (const [key, phrase] of Object.entries(VoiceCommands)) {
-    if (text.includes(phrase)) {
-      return key;
-    }
+export function matchCommand(text) {
+  text = text.toLowerCase();
+  for (const [command, phrase] of Object.entries(triggerWords)) {
+    if (text.includes(phrase)) return VoiceCommands[command];
   }
-
   return null;
 }

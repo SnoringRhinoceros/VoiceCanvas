@@ -1,10 +1,16 @@
 // src/speech/commands/keywords.js
-export const VoiceCommands = {
-  color_red: 'red',
-  color_green: 'green',
-  color_blue: 'blue',
-  color_white: 'white',
-  color_rainbow: 'rainbow',
-  increase_brush: 'increase brush size',
-  decrease_brush: 'decrease brush size',
-};
+
+export const commandList = [
+  'color_red',
+  'color_green',
+  'color_blue',
+  'color_white',
+  'color_rainbow',
+  'draw_circle',
+  'increase_brush',
+  'decrease_brush',
+];
+
+export const VoiceCommands = Object.fromEntries(
+  commandList.map(cmd => [cmd, cmd])
+);

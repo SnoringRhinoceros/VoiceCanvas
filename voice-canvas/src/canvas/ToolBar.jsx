@@ -2,32 +2,39 @@ import { useEffect } from 'react';
 import { useCommandBus } from '../context/CommandContext';
 import { VoiceCommands } from '../speech/commands/commandMap';
 
-const commandActions = {
-  [VoiceCommands.color_red]: () => setBrushColor('red'),
-  [VoiceCommands.color_green]: () => setBrushColor('green'),
-  [VoiceCommands.color_blue]: () => setBrushColor('blue'),
-  [VoiceCommands.color_white]: () => setBrushColor('white'),
-  [VoiceCommands.color_rainbow]: () => setBrushColor('rainbow'),
-  [VoiceCommands.increase_brush]: () => setBrushSize(prev => Math.min(prev + 5, 40)),
-  [VoiceCommands.decrease_brush]: () => setBrushSize(prev => Math.max(prev - 5, 1)),
-};
-
-
 export function Toolbar({ brushColor, setBrushColor, brushSize, setBrushSize }) {
   const { subscribe } = useCommandBus();
 
   useEffect(() => {
+    const commandActions = {
+      [VoiceCommands.color_red]: () => setBrushColor('red'),
+      [VoiceCommands.color_green]: () => setBrushColor('green'),
+      [VoiceCommands.color_blue]: () => setBrushColor('blue'),
+      [VoiceCommands.color_white]: () => setBrushColor('white'),
+      [VoiceCommands.color_rainbow]: () => setBrushColor('rainbow'),
+      [VoiceCommands.increase_brush]: () =>
+        setBrushSize?.((prev) => Math.min((prev || brushSize) + 5, 40)),
+      [VoiceCommands.decrease_brush]: () =>
+        setBrushSize?.((prev) => Math.max((prev || brushSize) - 5, 1)),
+    };
+
     const unsub = subscribe((command) => {
+      console.log('🧠 Toolbar received command:', command);
+      console.log('🎨 VoiceCommands:', VoiceCommands);
+      console.log('🧠 Toolbar received command:', command, typeof command);
+
       const action = commandActions[command];
       if (action) {
         action();
+      } else {
+        console.warn('No action mapped for command:', command);
       }
     });
 
     return unsub;
-  }, [setBrushColor, setBrushSize]);
+  }, [setBrushColor, setBrushSize, brushSize]);
 
-
+  // UI rendering
   return (
     <div style={{
       display: "flex",
