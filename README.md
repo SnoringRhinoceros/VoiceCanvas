@@ -27,7 +27,13 @@ Try it now: [https://speech-canvas.vercel.app](https://speech-canvas.vercel.app)
 | `rainbow`        | Enables a multicolor rainbow brush |
 | `increase brush` | Makes the brush size larger        |
 | `decrease brush` | Makes the brush size smaller       |
+| `set brush size X` | Sets brush size to size X (0-40) |
 
+💡 All commands are case-insensitive and can be spoken naturally. Voice Canvas is designed to recognize these words in context.
+
+Ex:
+`Use color red`
+Switches the color to red. Even though you don't need to say "use color," saying that gives me context which creates more accurate transcriptions.
 
 ## Tech Stack
 
