@@ -14,15 +14,16 @@ export default function MicModeToggle() {
   };
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.code === 'Space') {
-        e.preventDefault();
-        cycleMode();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [micMode]);
+  const handleKeyDown = (e) => {
+    if (e.code === 'Space' && !e.repeat) {
+      e.preventDefault();
+      cycleMode();
+    }
+  };
+  window.addEventListener('keydown', handleKeyDown);
+  return () => window.removeEventListener('keydown', handleKeyDown);
+}, [micMode]);
+
 
   return (
     <button

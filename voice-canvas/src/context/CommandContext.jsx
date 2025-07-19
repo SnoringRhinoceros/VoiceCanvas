@@ -9,7 +9,7 @@ export function CommandProvider({ children }) {
 
   const sendCommand = (command) => {
     // Add to command history
-    setLog((prev) => [...prev.slice(-9), { command, time: new Date() }]);
+    setLog((prev) => [...prev.slice(-9), { ...command, time: new Date() }]);
 
     // Notify all subscribers
     subscribersRef.current.forEach((fn) => {

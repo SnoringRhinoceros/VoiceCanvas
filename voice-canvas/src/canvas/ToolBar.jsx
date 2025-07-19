@@ -16,18 +16,23 @@ export function Toolbar({ brushColor, setBrushColor, brushSize, setBrushSize }) 
         setBrushSize?.((prev) => Math.min((prev || brushSize) + 5, 40)),
       [VoiceCommands.decrease_brush]: () =>
         setBrushSize?.((prev) => Math.max((prev || brushSize) - 5, 1)),
+      [VoiceCommands.set_brush_size]: (size) => {
+        if (size >= 1 && size <= 40) {
+          setBrushSize(size);
+        } else {
+          console.warn('Invalid brush size:', size);
+        }
+      }
     };
 
-    const unsub = subscribe((command) => {
-      console.log('🧠 Toolbar received command:', command);
-      console.log('🎨 VoiceCommands:', VoiceCommands);
-      console.log('🧠 Toolbar received command:', command, typeof command);
+    const unsub = subscribe((msg) => {
+      const { command, value } = typeof msg === 'string' ? { command: msg } : msg;
 
       const action = commandActions[command];
       if (action) {
-        action();
+        action(value);
       } else {
-        console.warn('No action mapped for command:', command);
+        console.warn('⚠️ No action mapped for command:', msg);
       }
     });
 

@@ -9,6 +9,7 @@ export const commandList = [
   'draw_circle',
   'increase_brush',
   'decrease_brush',
+  'set_brush_size',
 ];
 
 export const VoiceCommands = Object.fromEntries(

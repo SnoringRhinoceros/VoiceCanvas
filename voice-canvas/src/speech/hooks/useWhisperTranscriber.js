@@ -12,9 +12,10 @@ export function useWhisperTranscriber() {
   const { sendCommand } = useCommandBus();
 
   const parseCommand = (text) => {
-    const command = matchCommand(text);
-    if (command) sendCommand(command);
+    const result = matchCommand(text);
+    if (result) sendCommand(result);
   };
+
 
   const startRecording = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
