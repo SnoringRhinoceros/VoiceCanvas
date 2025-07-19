@@ -1,8 +1,9 @@
 import "./canvas.css";
 import {Toolbar} from "./Toolbar.jsx"; 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useContext } from "react";
 import { usePitchContext } from "../context/PitchContext.jsx";
 import { useSelector } from "react-redux";
+import {TimeContext} from "../App.jsx";
 
 const canvasWidth = 800;
 const canvasHeight = 800;
@@ -12,6 +13,8 @@ export function Canvas({ canvasRef }) {
   const canvas = useRef(null);         // Base canvas ref
   const overlayCanvas = useRef(null);  // Overlay canvas ref
   const ctx = useRef(null);            // Base canvas context
+
+  const time = useContext(TimeContext);
 
   // For stream detection
   const lastPitchObj = useRef(null);
@@ -75,7 +78,7 @@ export function Canvas({ canvasRef }) {
     function draw(now) {
       const elapsed = now - startTime.current;
 
-      if (elapsed >= 10000) {
+      if (elapsed >= time * 1000) {
         overlayCtx.clearRect(0, 0, canvasWidth, canvasHeight);
         overlayCtx.beginPath();
         overlayCtx.strokeStyle = "red";
@@ -89,7 +92,7 @@ export function Canvas({ canvasRef }) {
         return;
       }
 
-      const x = (elapsed / 10000) * canvasWidth;
+      const x = (elapsed / (time * 1000)) * canvasWidth;
 
       overlayCtx.clearRect(0, 0, canvasWidth, canvasHeight);
       overlayCtx.beginPath();
@@ -103,6 +106,33 @@ export function Canvas({ canvasRef }) {
     }
 
     frameRef.current = requestAnimationFrame(draw);
+  }
+
+  function calculateLine(lastPitchObj, currentPitchObj, ctx, threshold, color, brushSize) {
+    const { time: t1, pitch: p1 } = lastPitchObj ?? { time: 0, pitch: 0 };
+    const { time: t2, pitch: p2 } = currentPitchObj ?? { time: 0, pitch: 0 };
+    if (p1 < threshold || p2 < threshold) return;
+
+    console.log(brushSize);
+
+    const loopTime = time;
+    const x1 = (t1 % loopTime) / loopTime * canvasWidth;
+    let y1 = canvasHeight - p1;
+    const x2 = (t2 % loopTime) / loopTime * canvasWidth;
+    const y2 = canvasHeight - p2;
+    if(color === "rainbow"){
+      if ((t1 % loopTime) > (t2 % loopTime)) {
+        drawHueShiftLine(ctx, 0, canvasHeight - p1, x2, y2, brushSize);
+      } else {
+        drawHueShiftLine(ctx, x1, y1, x2, y2, brushSize);
+      }
+    }else{
+      if((t1 % loopTime) > (t2 % loopTime)){
+        drawNormalLine(ctx, 0, canvasHeight - p1, x2, y2, color, brushSize);
+      }else{
+        drawNormalLine(ctx, x1, y1, x2, y2, color, brushSize);
+      }
+    }
   }
 
   // Cleanup animation frame on unmount
@@ -150,32 +180,7 @@ export function Canvas({ canvasRef }) {
 
 
 
-function calculateLine(lastPitchObj, currentPitchObj, ctx, threshold, color, brushSize) {
-  const { time: t1, pitch: p1 } = lastPitchObj ?? { time: 0, pitch: 0 };
-  const { time: t2, pitch: p2 } = currentPitchObj ?? { time: 0, pitch: 0 };
-  if (p1 < threshold || p2 < threshold) return;
 
-  console.log(brushSize);
-
-  const loopTime = 10;
-  const x1 = (t1 % loopTime) / loopTime * canvasWidth;
-  let y1 = canvasHeight - p1;
-  const x2 = (t2 % loopTime) / loopTime * canvasWidth;
-  const y2 = canvasHeight - p2;
-  if(color === "rainbow"){
-    if ((t1 % loopTime) > (t2 % loopTime)) {
-      drawHueShiftLine(ctx, 0, canvasHeight - p1, x2, y2, brushSize);
-    } else {
-      drawHueShiftLine(ctx, x1, y1, x2, y2, brushSize);
-    }
-  }else{
-    if((t1 % loopTime) > (t2 % loopTime)){
-      drawNormalLine(ctx, 0, canvasHeight - p1, x2, y2, color, brushSize);
-    }else{
-      drawNormalLine(ctx, x1, y1, x2, y2, color, brushSize);
-    }
-  }
-}
 
 function drawNormalLine(ctx, x0, y0, x1, y1, color, size) {
   ctx.save();

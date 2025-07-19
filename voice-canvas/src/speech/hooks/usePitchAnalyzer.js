@@ -91,9 +91,9 @@ export function usePitchAnalyzer() {
       loop();
 
       // Stop after 10 seconds (or expose this as an external call)
-      setTimeout(() => {
-        stopAnalysis();
-      }, 10000);
+      //setTimeout(() => {
+      //  stopAnalysis();
+      //}, 10000);
 
     } catch (err) {
       console.error(err);
