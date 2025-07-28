@@ -53,7 +53,7 @@ Switches the color to red. Even though you don't need to say "use color," saying
 ### Installation
 
 ```bash
-git clone https://github.com/your-username/voice-canvas.git
+git clone https://github.com/SnoringRhinoceros/voice-canvas.git
 cd voice-canvas
 npm install
 ```
